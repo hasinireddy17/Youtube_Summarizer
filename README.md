@@ -32,14 +32,13 @@ Then open http://127.0.0.1:8000/ and paste a YouTube link.
    pulls the transcript via `youtube-transcript-api`.
 2. `llm.py` chunks long transcripts (~8000 chars/chunk) and summarizes each
    chunk, then does a second summarization pass over the partial summaries
-   to produce one clean final summary (map-reduce pattern — avoids blowing
-   past the model's context window on long videos).
+   to produce one clean final summary.
 3. The summary is then used to prompt the LLM twice more: once for a JSON
    quiz, once for JSON flashcards.
 4. `views.py` orchestrates the pipeline and renders results in
    `templates/summarizer/home.html`.
 
-## Design decisions worth mentioning in an interview
+## Design decisions
 - Used `youtube-transcript-api` instead of the official YouTube Data API
   because it doesn't require API key setup/quota management just to pull
   captions — the Data API would be needed only for metadata like title/
