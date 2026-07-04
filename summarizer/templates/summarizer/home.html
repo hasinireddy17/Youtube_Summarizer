@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Video Summarizer</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #f7f7f9; }
+        h1 { color: #222; }
+        form { display: flex; gap: 10px; margin-bottom: 30px; }
+        input[type=text] { flex: 1; padding: 10px; font-size: 16px; }
+        button { padding: 10px 20px; font-size: 16px; background: #d32f2f; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #b71c1c; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; }
+
+        .quiz-q { margin-bottom: 25px; }
+        .quiz-q p.question-text { font-weight: bold; margin-bottom: 10px; }
+        .option-btn {
+            display: block; width: 100%; text-align: left; padding: 10px 14px;
+            margin-bottom: 8px; background: #fff; border: 2px solid #ddd;
+            border-radius: 6px; cursor: pointer; font-size: 15px; color: #333;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .option-btn:hover { border-color: #bbb; background: #fafafa; }
+        .option-btn.correct { background: #e8f5e9; border-color: #43a047; color: #1b5e20; font-weight: bold; }
+        .option-btn.incorrect { background: #ffebee; border-color: #e53935; color: #b71c1c; font-weight: bold; }
+        .option-btn.disabled { cursor: default; pointer-events: none; }
+        .option-btn .mark { float: right; }
+
+        .flashcard-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .flip-card {
+            background: transparent; width: 100%; height: 160px; perspective: 1000px; cursor: pointer;
+        }
+        .flip-card-inner {
+            position: relative; width: 100%; height: 100%; text-align: center;
+            transition: transform 0.5s; transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back {
+            position: absolute; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            padding: 14px; font-size: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        .flip-card-front { background: #d32f2f; color: white; font-weight: bold; }
+        .flip-card-back { background: #fff3e0; color: #333; transform: rotateY(180deg); border: 2px solid #d32f2f; }
+        .flip-hint { font-size: 12px; color: #888; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <h1>YouTube Summarizer</h1>
+    <p>Paste a YouTube link to get summary, quiz, and flashcards.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="video_url" placeholder="https://www.youtube.com/watch?v=..." value="{{ video_url|default:'' }}" required>
+        <button type="submit">Summarize</button>
+    </form>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    {% if summary %}
+        <div class="card">
+            <h2>Summary</h2>
+            <p style="white-space: pre-line;">{{ summary }}</p>
+        </div>
+    {% endif %}
+
+    {% if quiz %}
+        <div class="card">
+            <h2>Quiz</h2>
+            {% for q in quiz %}
+                <div class="quiz-q" data-answer="{{ q.answer }}">
+                    <p class="question-text">{{ forloop.counter }}. {{ q.question }}</p>
+                    {% for opt in q.options %}
+                        <button type="button" class="option-btn" onclick="checkAnswer(this)">{{ opt }}</button>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if flashcards %}
+        <div class="card">
+            <h2>Flashcards</h2>
+            <p class="flip-hint">Click a card to reveal the answer</p>
+            <div class="flashcard-grid">
+                {% for card in flashcards %}
+                    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                        <div class="flip-card-inner">
+                            <div class="flip-card-front">{{ card.front }}</div>
+                            <div class="flip-card-back">{{ card.back }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <script>
+        function checkAnswer(button) {
+            const container = button.parentElement;
+            const correctAnswer = container.dataset.answer.trim();
+            const allButtons = container.querySelectorAll('.option-btn');
+            const chosenText = button.textContent.trim();
+
+            allButtons.forEach(btn => btn.classList.add('disabled'));
+
+            allButtons.forEach(btn => {
+                if (btn.textContent.trim() === correctAnswer) {
+                    btn.classList.add('correct');
+                    btn.innerHTML += ' <span class="mark">✓</span>';
+                }
+            });
+
+            if (chosenText !== correctAnswer) {
+                button.classList.add('incorrect');
+                button.innerHTML += ' <span class="mark">✗</span>';
+            }
+        }
+    </script>
+</body>
+</html>

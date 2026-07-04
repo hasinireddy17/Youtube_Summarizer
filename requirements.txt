@@ -1,0 +1,5 @@
+django
+youtube-transcript-api
+requests
+gunicorn
+whitenoise
